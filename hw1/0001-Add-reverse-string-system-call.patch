@@ -1,0 +1,255 @@
+From ac40f282813a4b863c4229369f47f07177ff0d3f Mon Sep 17 00:00:00 2001
+From: brian <brianshih59@gmail.com>
+Date: Tue, 8 Oct 2024 21:13:46 +0800
+Subject: [PATCH] Add reverse string system call
+
+---
+ Makefile                               |   2 +-
+ arch/x86/entry/syscalls/syscall_64.tbl |   1 +
+ include/linux/syscalls.h               |   2 ++
+ revstr/Makefile                        |   1 +
+ revstr/a.out                           | Bin 0 -> 16192 bytes
+ revstr/revstr.c                        |  23 +++++++++++++++++++++++
+ revstr/test_revstr                     | Bin 0 -> 16192 bytes
+ revstr/test_revstr.c                   |  21 +++++++++++++++++++++
+ 8 files changed, 49 insertions(+), 1 deletion(-)
+ create mode 100644 revstr/Makefile
+ create mode 100755 revstr/a.out
+ create mode 100644 revstr/revstr.c
+ create mode 100755 revstr/test_revstr
+ create mode 100644 revstr/test_revstr.c
+
+diff --git a/Makefile b/Makefile
+index 997b67722292..e1780a699e35 100644
+--- a/Makefile
++++ b/Makefile
+@@ -743,7 +743,7 @@ endif
+ 
+ ifeq ($(KBUILD_EXTMOD),)
+ # Objects we will link into vmlinux / subdirs we need to visit
+-core-y		:=
++core-y		:= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ revstr/
+ drivers-y	:=
+ libs-y		:= lib/
+ endif # KBUILD_EXTMOD
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index c84d12608cd2..a1b70c25ca21 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -372,6 +372,7 @@
+ 448	common	process_mrelease	sys_process_mrelease
+ 449	common	futex_waitv		sys_futex_waitv
+ 450	common	set_mempolicy_home_node	sys_set_mempolicy_home_node
++451     common  revstr                  sys_revstr
+ 
+ #
+ # Due to a historical design error, certain syscalls are numbered differently
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index a34b0f9a9972..d90035480258 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -1385,4 +1385,6 @@ int __sys_getsockopt(int fd, int level, int optname, char __user *optval,
+ 		int __user *optlen);
+ int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
+ 		int optlen);
++
++asmlinkage long sys_revstr(const char __user *str, int len);
+ #endif
+diff --git a/revstr/Makefile b/revstr/Makefile
+new file mode 100644
+index 000000000000..4c0ace2ef4b4
+--- /dev/null
++++ b/revstr/Makefile
+@@ -0,0 +1 @@
++obj-y := revstr.o
+diff --git a/revstr/a.out b/revstr/a.out
+new file mode 100755
+index 0000000000000000000000000000000000000000..6a0ab66b284bfbe081dc0b1e5c50aebd81a97879
+GIT binary patch
+literal 16192
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/revstr/revstr.c b/revstr/revstr.c
+new file mode 100644
+index 000000000000..ae772ae299f6
+--- /dev/null
++++ b/revstr/revstr.c
+@@ -0,0 +1,23 @@
++#include <linux/kernel.h>
++#include <linux/syscalls.h>
++#include <linux/uaccess.h>
++
++SYSCALL_DEFINE2(revstr, char __user *, str, int, len) {
++    char r_str[256];   
++    if(copy_from_user(r_str, str, len)){
++	printk("Fail to copy from user!!!\n");
++	return -EFAULT;
++    }
++    printk("The origin string: %s\n", r_str);
++    for (int i = 0; i < len/2; ++i) {
++        char tmp = r_str[i];
++    	r_str[i] = r_str[len-i-1];
++        r_str[len-i-1] = tmp;
++    }
++    printk("The reversed string: %s\n", r_str);
++    if(copy_to_user(str, r_str, len)){
++	printk("Fail to copy to user!!!\n");
++        return -EFAULT;
++    }
++    return 0;
++}
+diff --git a/revstr/test_revstr b/revstr/test_revstr
+new file mode 100755
+index 0000000000000000000000000000000000000000..6a0ab66b284bfbe081dc0b1e5c50aebd81a97879
+GIT binary patch
+literal 16192
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/revstr/test_revstr.c b/revstr/test_revstr.c
+new file mode 100644
+index 000000000000..8ac6ddb8b610
+--- /dev/null
++++ b/revstr/test_revstr.c
+@@ -0,0 +1,21 @@
++#include <unistd.h>
++#include <string.h>
++#include <stdio.h>
++#include <assert.h>
++#define __NR_revstr 451
++
++int main(int argc, char *agrv[]) {
++    char str1[20] = "hello";
++    printf("Ori: %s\n", str1);
++    int ret1 = syscall(__NR_revstr, str1, strlen(str1));
++    assert(ret1 == 0);
++    printf("Rev: %s\n", str1);
++    
++    char str2[20] = "Operating System";
++    printf("Ori: %s\n", str2);
++    int ret2 = syscall(__NR_revstr, str2, strlen(str2));
++    assert(ret2 == 0);
++    printf("Rev: %s\n", str2);
++
++    return 0;
++}
+-- 
+2.43.0
+
